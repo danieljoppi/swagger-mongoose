@@ -1,8 +1,8 @@
 {
-  "name": "swagger-mongoose",
-  "version": "1.1.2",
+  "name": "swagger-mongoose2",
+  "version": "2.0.0",
   "description": "Generate mongoose schemas and models from swagger documents",
-  "main": "./lib/index.js",
+  "main": "./index.js",
   "directories": {
     "test": "test"
   },
@@ -22,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/simonguest/swagger-mongoose"
+    "url": "https://github.com/danieljoppi/swagger-mongoose2"
   },
   "keywords": [
     "swagger",
@@ -30,10 +30,10 @@
     "mongo",
     "schema"
   ],
-  "author": "Simon Guest <me@simonguest.com> (http://github.com/simonguest)",
-  "license": "Apache 2",
+  "author": "Daniel Henrique Joppi <daniel.joppi@gmail.com> (http://github.com/danieljoppi)",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/simonguest/swagger-mongoose/issues"
+    "url": "https://github.com/danieljoppi/swagger-mongoose2/issues"
   },
-  "homepage": "https://github.com/simonguest/swagger-mongoose"
+  "homepage": "https://github.com/danieljoppi/swagger-mongoose2"
 }

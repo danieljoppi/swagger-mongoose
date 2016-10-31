@@ -218,6 +218,13 @@ var processRef = function (property, objectName, props, key, required) {
   fillRequired(props, key, required);
 };
 
+function resolveRef (item) {
+  var refRegExp = /^#\/definitions\/(\w*)$/;
+  var refString = item['$ref'] ? item['$ref'] : item['items']['$ref'];
+  var propType = refString.match(refRegExp)[1];
+  return definitions[propType];
+}
+
 var getSchema = function (objectName, orgObject) {
   var props = {};
   if (orgObject.additionalProperties) {
@@ -226,13 +233,26 @@ var getSchema = function (objectName, orgObject) {
   var fullObject = {};
   if (orgObject.allOf) {
     //console.log('%%%%%%%', objectName, orgObject.allOf.length);
-    var allOf = orgObject.allOf;
-    delete orgObject.allOf;
+    let allOf = orgObject.allOf,
+      properties = {},
+      required = [];
     for (var i= 0, len=allOf.length; i<len; i++) {
-      _.extend(fullObject, allOf[i]);
+      let item = allOf[i];
+      if (isPropertyHasRef(item)) {
+        item = resolveRef(item);
+      }
+      _.extend(fullObject, item);
+      _.extend(properties, item.properties);
+      if (item.required && item.required.length) {
+        required.push(...item.required);
+      }
     }
+    fullObject.properties = properties;
+    fullObject.required = required;
+    delete orgObject.allOf;
+  } else {
+    _.extend(fullObject, orgObject);
   }
-  _.extend(fullObject, orgObject);
 
 
   var required = fullObject.required || [];

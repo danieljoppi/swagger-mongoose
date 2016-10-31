@@ -1,5 +1,5 @@
 'use strict';
-var swaggerMongoose = require('./../lib/index');
+var swaggerMongoose = require('..');
 
 var fs = require('fs');
 var async = require('async');
@@ -38,7 +38,7 @@ describe('swagger-mongoose tests', function () {
 
   it('should create an example pet and return all valid properties', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
-    var Pet = swaggerMongoose.compile(swagger).models.Pet;
+    var Pet = swaggerMongoose(swagger).models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy',
@@ -54,8 +54,9 @@ describe('swagger-mongoose tests', function () {
       notAKey: 'test'
     });
     myPet.save(function (err) {
-      if (err) throw err;
+      if (err) return done(err);
       Pet.findOne({id: 123}, function (err, data) {
+        if (err) return done(err);
         assert(data.id === 123, 'ID mismatch');
         assert(data.name === 'Fluffy', 'Name mismatch');
         assert(data.price === 99.99, 'Price mismatch');
@@ -72,7 +73,7 @@ describe('swagger-mongoose tests', function () {
 
   it('should not create an example without required field', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
-    var Pet = swaggerMongoose.compile(swagger).models.Pet;
+    var Pet = swaggerMongoose(swagger).models.Pet;
     var myPet = new Pet({
       id: 123
     });
@@ -85,13 +86,13 @@ describe('swagger-mongoose tests', function () {
 
   it('should create an example pet from a file', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
-    var Pet = swaggerMongoose.compile(swagger).models.Pet;
+    var Pet = swaggerMongoose(swagger).models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy'
     });
     myPet.save(function (err) {
-      if (err) throw err;
+      if (err) return done(err);
       Pet.findOne({id: 123}, function (err, data) {
         assert(data.id === 123, 'ID mismatch');
         assert(data.name === 'Fluffy', 'Name mismatch');
@@ -102,14 +103,15 @@ describe('swagger-mongoose tests', function () {
 
   it('should create an example pet from a JSON object', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
-    var Pet = swaggerMongoose.compile(JSON.parse(swagger)).models.Pet;
+    var Pet = swaggerMongoose(JSON.parse(swagger)).models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy'
     });
     myPet.save(function (err) {
-      if (err) throw err;
+      if (err) return done(err);
       Pet.findOne({id: 123}, function (err, data) {
+        if (err) return done(err);
         assert(data.id === 123, 'ID mismatch');
         assert(data.name === 'Fluffy', 'Name mismatch');
         done();
@@ -119,14 +121,15 @@ describe('swagger-mongoose tests', function () {
 
   it('should create an example pet from a string', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
-    var Pet = swaggerMongoose.compile(swagger.toString()).models.Pet;
+    var Pet = swaggerMongoose(swagger.toString()).models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy'
     });
     myPet.save(function (err) {
-      if (err) throw err;
+      if (err) return done(err);
       Pet.findOne({id: 123}, function (err, data) {
+        if (err) return done(err);
         assert(data.id === 123, 'ID mismatch');
         assert(data.name === 'Fluffy', 'Name mismatch');
         done();
@@ -137,8 +140,7 @@ describe('swagger-mongoose tests', function () {
   it('should create an example person with relations to external collections', function (done) {
     var swagger = fs.readFileSync('./test/person.json');
 
-
-    var models = swaggerMongoose.compile(swagger.toString()).models;
+    var models = swaggerMongoose(swagger.toString()).models;
 
     var Person = models.Person;
     var House = models.House;
@@ -168,6 +170,8 @@ describe('swagger-mongoose tests', function () {
         });
       }
     }, function (err, results) {
+      console.log(err);
+      if (err) return done(err);
       var person = new Person({
         login: 'jb@mi6.gov',
         firstName: 'James',
@@ -184,10 +188,12 @@ describe('swagger-mongoose tests', function () {
         }
       });
       person.save(function (err, data) {
+        if (err) return done(err);
         Person
           .findOne({_id: data._id})
           .lean()
           .exec(function (err, newPerson) {
+            if (err) return done(err);
             async.parallel({
               car: function (cb) {
                 Car.findOne({_id: newPerson.cars[0]}, function (err, car) {
@@ -200,6 +206,7 @@ describe('swagger-mongoose tests', function () {
                 });
               }
             }, function (err, populated) {
+              if (err) return done(err);
               newPerson.cars = [populated.car];
               newPerson.houses = [populated.house];
 
@@ -225,7 +232,7 @@ describe('swagger-mongoose tests', function () {
 
   it('should identify return indicies from the swagger document', function (done) {
       var swagger = fs.readFileSync('./test/person.json');
-      var models = swaggerMongoose.compile(swagger.toString()).models;
+      var models = swaggerMongoose(swagger.toString()).models;
       var Human = models.Human;
       var Person = models.Person;
       var House = models.House;
@@ -239,7 +246,7 @@ describe('swagger-mongoose tests', function () {
 
   it('should identify and throw errors on duplicate properties marked unique', function (done) {
       var swagger = fs.readFileSync('./test/person.json');
-      var models = swaggerMongoose.compile(swagger.toString()).models;
+      var models = swaggerMongoose(swagger.toString()).models;
       var Person = models.Person;
 
       var person = new Person({
@@ -252,6 +259,7 @@ describe('swagger-mongoose tests', function () {
         }
       });
       person.save(function(err,data){
+        if (err) return done(err);
         var copyCat = new Person({
           login: 'jb@mi6.gov',
           firstName: 'Jake',
@@ -273,13 +281,14 @@ describe('swagger-mongoose tests', function () {
 
   it('should identify and throw errors on compound indices marked unique', function (done) {
       var swagger = fs.readFileSync('./test/person.json');
-      var models = swaggerMongoose.compile(swagger.toString()).models;
+      var models = swaggerMongoose(swagger.toString()).models;
       var Human = models.Human;
       var human = new Human({
         firstName: 'James',
         lastName: 'Bond'
       })
       human.save(function(err,data){
+        if (err) return done(err);
         var copyCat = new Human({
           firstName: 'James',
           lastName: 'Bond'
@@ -301,7 +310,7 @@ describe('swagger-mongoose tests', function () {
 
   it('should allow for external validators', function (done) {
       var swagger = fs.readFileSync('./test/person.json');
-      var models = swaggerMongoose.compile(swagger.toString()).models;
+      var models = swaggerMongoose(swagger.toString()).models;
       var Person = models.Person;
 
       var person = new Person({
@@ -329,7 +338,7 @@ describe('swagger-mongoose tests', function () {
 
   it('should identify and add enum to schema', function (done) {
       var swagger = fs.readFileSync('./test/person.json');
-      var models = swaggerMongoose.compile(swagger.toString()).models;
+      var models = swaggerMongoose(swagger.toString()).models;
       var Car = models.Car;
 
       var car = new Car({
@@ -353,13 +362,13 @@ describe('swagger-mongoose tests', function () {
   it('should create an example pet from a JSON object with default schema options', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
 
-    var Pet = swaggerMongoose.compile(JSON.parse(swagger), { default: { timestamps: true }}).models.Pet;
+    var Pet = swaggerMongoose(JSON.parse(swagger), { default: { timestamps: true }}).models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy'
     });
     myPet.save(function (err) {
-      if (err) throw err;
+      if (err) return done(err);
       Pet.findOne({id: 123}, function (err, data) {
         assert(data.schema.paths.createdAt, 'createdAt timestamp not found in data');
         assert(data.schema.paths.updatedAt, 'updatedAt timestamp not found in data');
@@ -371,13 +380,13 @@ describe('swagger-mongoose tests', function () {
   it('should create an example pet from a JSON object with opposite default schema options', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
 
-    var Pet = swaggerMongoose.compile(JSON.parse(swagger), { default: {'schema-options': { timestamps: false }}}).models.Pet;
+    var Pet = swaggerMongoose(JSON.parse(swagger), { default: {'schema-options': { timestamps: false }}}).models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy'
     });
     myPet.save(function (err) {
-      if (err) throw err;
+      if (err) return done(err);
       Pet.findOne({id: 123}, function (err, data) {
         assert(!data.schema.paths.createdAt, 'createdAt timestamp found in data');
         assert(!data.schema.paths.updatedAt, 'updatedAt timestamp found in data');
@@ -388,13 +397,13 @@ describe('swagger-mongoose tests', function () {
 
   it('should create an example pet from a JSON object with schema specific options overriding default options', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
-    var Pet = swaggerMongoose.compile(JSON.parse(swagger), { default: {'schema-options': { timestamps: true }}, Pet: {'schema-options': { timestamps: false }}}).models.Pet;
+    var Pet = swaggerMongoose(JSON.parse(swagger), { default: {'schema-options': { timestamps: true }}, Pet: {'schema-options': { timestamps: false }}}).models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy'
     });
     myPet.save(function (err) {
-      if (err) throw err;
+      if (err) return done(err);
       Pet.findOne({id: 123}, function (err, data) {
         assert(!data.schema.paths.createdAt, 'createdAt timestamp found in data');
         assert(!data.schema.paths.updatedAt, 'updatedAt timestamp found in data');
@@ -405,13 +414,13 @@ describe('swagger-mongoose tests', function () {
 
   it('should create an example pet from a JSON object with schema specific options overriding default options', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
-    var Pet = swaggerMongoose.compile(JSON.parse(swagger), { default: {'schema-options': { timestamps: false }}, Pet: {'schema-options': { timestamps: true }}}).models.Pet;
+    var Pet = swaggerMongoose(JSON.parse(swagger), { default: {'schema-options': { timestamps: false }}, Pet: {'schema-options': { timestamps: true }}}).models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy'
     });
     myPet.save(function (err) {
-      if (err) throw err;
+      if (err) return done(err);
       Pet.findOne({id: 123}, function (err, data) {
         assert(data.schema.paths.createdAt, 'createdAt timestamp not found in data');
         assert(data.schema.paths.updatedAt, 'updatedAt timestamp not found in data');
@@ -422,7 +431,7 @@ describe('swagger-mongoose tests', function () {
 
   it('should avoid reserved mongodb fields', function (done) {
     var swagger = fs.readFileSync('./test/person.json');
-    var models = swaggerMongoose.compile(swagger.toString()).models;
+    var models = swaggerMongoose(swagger.toString()).models;
 
     var Person = models.Person;
 
@@ -437,7 +446,7 @@ describe('swagger-mongoose tests', function () {
 
   it('should process circular references', function (done) {
     var swagger = fs.readFileSync('./test/person.json');
-    var models = swaggerMongoose.compile(swagger.toString()).models;
+    var models = swaggerMongoose(swagger.toString()).models;
 
     var Human = models.Human;
 
