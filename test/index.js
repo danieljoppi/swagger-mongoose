@@ -38,7 +38,8 @@ describe('swagger-mongoose tests', function () {
 
   it('should create an example pet and return all valid properties', function (done) {
     var swagger = fs.readFileSync('./test/petstore.json');
-    var Pet = swaggerMongoose(swagger).models.Pet;
+    var models = swaggerMongoose(swagger).models;
+    var Pet = models.Pet;
     var myPet = new Pet({
       id: 123,
       name: 'Fluffy',

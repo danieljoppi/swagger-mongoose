@@ -1,5 +1,8 @@
 'use strict';
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const convertJSON = require('./libs/convert-json');
 const makeSchema = require('./libs/make-schema');
 const resolveDefinitions = require('./libs/resolve-definitions');
 
@@ -24,8 +27,13 @@ const compile = ({definitions = {}} =  {}) => {
     models = {};
   for (let n = 0, len = names.length; n < len; n++) {
     let name = names[n];
-
     let obj = makeSchema({name, entities});
+
+    obj._id = {
+      type: Schema.Types.ObjectId,
+      unique: true,
+      default: () => new Schema.Types.ObjectId()
+    };
 
     let schema = schemas[name] = new mongoose.Schema(obj);
     models[name] = mongoose.model(name, schema);
@@ -34,9 +42,6 @@ const compile = ({definitions = {}} =  {}) => {
 };
 
 module.exports = (swagger) => {
-  if ('string' === typeof swagger) {
-    return compile(JSON.parse(swagger));
-  } else {
-    return compile(swagger);
-  }
+  let json = convertJSON(swagger);
+  return compile(json);
 };
