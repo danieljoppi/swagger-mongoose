@@ -45,7 +45,7 @@ module.exports = function resolve({name, definitions = {}, track = '#/definition
       let nameRef = m[1];
       if (nameRef && !entity.refs[nameRef]) {
         let entityRef = definitions[nameRef],
-          isSchema = ~['true', true].indexOf(entityRef['x-swagger-mongoose-schema']),
+          isSchema = !~['false', false].indexOf(entityRef['x-swagger-mongoose-schema']),
           strRef;
 
         if (nameRef !== name) {

@@ -15,11 +15,23 @@ const compile = ({definitions = {}} =  {}) => {
     if (entities[name]) {
       continue;
     }
-    let entity = resolveDefinitions({name, definitions});
-    entities[name] = entity;
-    let refs = entity.refs;
+    let def = definitions[name],
+      excludeSchema = ~['false', false].indexOf(def['x-swagger-mongoose-schema']);
+    if (excludeSchema) {
+      continue;
+    }
 
-    entities = Object.assign({}, refs, entities);
+    try {
+      let entity = resolveDefinitions({name, definitions});
+      entities[name] = entity;
+      let refs = entity.refs;
+
+      entities = Object.assign({}, refs, entities);
+    } catch (e) {
+      if (def.type === 'object' || def.properties) {
+        throw e;
+      }
+    }
   }
   names = Object.keys(entities);
 
