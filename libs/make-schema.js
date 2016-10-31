@@ -20,7 +20,6 @@ module.exports = ({name, entities}) => {
         property = properties[fieldName],
         field = {};
 
-
       let type = propertyMap(property);
       if ('function' === typeof type || (Array.isArray(type) && 'function' === typeof type[0])) {
         field.type = type;
@@ -33,29 +32,36 @@ module.exports = ({name, entities}) => {
             field.max = property.maximum;
           }
         }
+
+        let ref = property.$ref || (property.items && property.items.$ref);
+        if (ref && $RE.test(ref)) {
+          field.ref = $RE.exec(ref)[1];
+        }
+
+        if (~required.indexOf(fieldName)) {
+          field.required = true;
+        }
+        if (property.default) {
+          field.default = property.default
+        }
+        if (property.enum) {
+          field.enum = property.enum
+        }
+        if (~['true', true].indexOf(property['x-mongoose-field-unique'])) {
+          field.unique = true;
+        }
+        if (property['x-mongoose-field-index']) {
+          field.index = property['x-mongoose-field-index'];
+        }
       } else {
-        field.type = makeSchema(property);
-      }
-      let ref = property.$ref || (property.items && property.items.$ref);
-      if (ref && $RE.test(ref)) {
-        field.ref = $RE.exec(ref)[1];
-      }
-
-      if (~required.indexOf(fieldName)) {
-        field.required = true;
-      }
-      if (property.default) {
-        field.default = property.default
-      }
-      if (property.enum) {
-        field.enum = property.enum
-      }
-      if (~['true', true].indexOf(property['x-mongoose-field-unique'])) {
-        field.unique = true;
-      }
-      if (property['x-mongoose-field-index']) {
-        field.index = property['x-mongoose-field-index'];
-
+        Object.assign(field, makeSchema(property));
+        let keys = Object.keys(field);
+        for (let i = 0, tt = keys.length; i < tt; i++) {
+          let key = keys[i];
+          if (key.startsWith('_')) {
+            delete field[key];
+          }
+        }
       }
 
       schema[fieldName] = field;
