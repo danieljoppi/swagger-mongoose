@@ -16,7 +16,7 @@ const compile = ({definitions = {}} =  {}, opts = {}) => {
       continue;
     }
     let def = definitions[name],
-      excludeSchema = ~['false', false].indexOf(def['x-swagger-mongoose-schema']);
+      excludeSchema = !~['true', true].indexOf(def['x-swagger-mongoose-schema']);
     if (excludeSchema) {
       continue;
     }
@@ -30,6 +30,8 @@ const compile = ({definitions = {}} =  {}, opts = {}) => {
     } catch (e) {
       if ('object' === def.type || def.properties) {
         throw e;
+      } else {
+        console.error(e, e.stack);
       }
     }
   }
