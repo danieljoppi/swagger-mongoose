@@ -6,7 +6,7 @@ const convertJSON = require('./libs/convert-json');
 const makeSchema = require('./libs/make-schema');
 const resolveDefinitions = require('./libs/resolve-definitions');
 
-const compile = ({definitions = {}} =  {}) => {
+const compile = ({definitions = {}} =  {}, opts = {}) => {
   let names = Object.keys(definitions),
     entities = {};
   for (let n = 0, len = names.length; n < len; n++) {
@@ -28,7 +28,7 @@ const compile = ({definitions = {}} =  {}) => {
 
       entities = Object.assign({}, refs, entities);
     } catch (e) {
-      if (def.type === 'object' || def.properties) {
+      if ('object' === def.type || def.properties) {
         throw e;
       }
     }
@@ -41,19 +41,16 @@ const compile = ({definitions = {}} =  {}) => {
     let name = names[n];
     let obj = makeSchema({name, entities});
 
-    obj._id = {
-      type: Schema.Types.ObjectId,
-      unique: true,
-      default: () => new Schema.Types.ObjectId()
-    };
+    delete obj._id;
+    delete obj.__v;
 
-    let schema = schemas[name] = new mongoose.Schema(obj);
+    let schema = schemas[name] = new mongoose.Schema(obj, opts);
     models[name] = mongoose.model(name, schema);
   }
   return {schemas, models};
 };
 
-module.exports = (swagger) => {
+module.exports = (swagger, opts) => {
   let json = convertJSON(swagger);
-  return compile(json);
+  return compile(json, opts);
 };

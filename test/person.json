@@ -121,19 +121,15 @@
                 "houses": {
                     "type": "array",
                     "items": {
-                        "type": "string",
-                        "x-swagger-mongoose": {
-                            "$ref": "#/definitions/House"
-                        }
+                        "$ref": "#/definitions/House",
+                        "x-swagger-mongoose-ref": true
                     }
                 },
                 "cars": {
                     "type": "array",
                     "items": {
-                        "type": "string",
-                        "x-swagger-mongoose": {
-                            "$ref": "#/definitions/Car"
-                        }
+                      "x-swagger-mongoose-ref": true,
+                      "$ref": "#/definitions/Car"
                     }
                 },
                 "phone": {

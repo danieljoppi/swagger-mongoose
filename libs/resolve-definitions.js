@@ -1,5 +1,7 @@
 'use strict';
-const $RE = /\$ref":"\#\/definitions\/([\w]+)"/g;
+const $RE_FIND = /\#\/definitions\/([\w]+)/i;
+const $RE_REPLACE = /\{\s*([^{}]*)"\$ref":"\#\/definitions\/([\w]+)"[,]?([^{}]*)[\},]/g;
+const $RE_MONGOOSE_REF = /"x-swagger-mongoose-ref":["]?true["]?/i;
 
 module.exports = function resolve({name, definitions = {}, track = '#/definitions'}) {
   let def = definitions[name];
@@ -19,7 +21,7 @@ module.exports = function resolve({name, definitions = {}, track = '#/definition
     for (let i = 0, len = array.length; i < len; i++) {
       let item = array[i];
       if (item.$ref) {
-        let match = $RE.exec(item.$ref),
+        let match = $RE_FIND.exec(item.$ref),
           nameRef = match && match[1];
         item = resolve({
           name: nameRef,
@@ -41,25 +43,22 @@ module.exports = function resolve({name, definitions = {}, track = '#/definition
 
   function findRelationship(def) {
     let str = JSON.stringify(def);
-    for (let m; m = $RE.exec(str);) {
-      let nameRef = m[1];
+    for (let m; m = $RE_REPLACE.exec(str);) {
+      let groupPre = m[1],
+        nameRef = m[2],
+        groupPos = m[3];
       if (nameRef && !entity.refs[nameRef]) {
-        let entityRef = definitions[nameRef],
-          isSchema = !~['false', false].indexOf(entityRef['x-swagger-mongoose-schema']),
-          strRef;
-
+        let entityRef = definitions[nameRef];
         if (nameRef !== name) {
-          if (isSchema) {
-            strRef = JSON.stringify(entityRef);
-          } else {
-            strRef = JSON.stringify(findRelationship(entityRef));
-          }
-          strRef = strRef.substring(1, strRef.length - 1);
+          let isSchema = !~['true', true].indexOf(entityRef['x-swagger-mongoose-schema-fixed']),
+            isRef = $RE_MONGOOSE_REF.test(groupPre) || $RE_MONGOOSE_REF.test(groupPos);
 
-          if (isSchema) {
-            entity.refs[nameRef] = entityRef;
-          } else {
+          if (!isRef && !isSchema) {
+            let strRef = JSON.stringify(isSchema ? entityRef : findRelationship(entityRef)).substring(1, strRef.length - 1);
+
             str = str.replace(`"$ref":"#/definitions/${nameRef}"`, strRef);
+          } else {
+            entity.refs[nameRef] = entityRef;
           }
         }
       }

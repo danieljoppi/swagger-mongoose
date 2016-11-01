@@ -20,8 +20,11 @@ module.exports = ({name, entities}) => {
         property = properties[fieldName],
         field = {};
 
-      let type = propertyMap(property);
-      if ('function' === typeof type || (Array.isArray(type) && 'function' === typeof type[0])) {
+      let type = propertyMap(property),
+        isArray = Array.isArray(type);
+
+      type = isArray ? type[0] : type;
+      if ('function' === typeof type) {
         field.type = type;
         let o = Array.isArray(type) ? type[0] : type;
         if (Number === o) {
@@ -52,6 +55,9 @@ module.exports = ({name, entities}) => {
         }
         if (property['x-mongoose-field-index']) {
           field.index = property['x-mongoose-field-index'];
+        }
+        if (isArray) {
+          field = [field];
         }
       } else {
         Object.assign(field, makeSchema(property));
